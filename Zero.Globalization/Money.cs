@@ -368,20 +368,52 @@ namespace Zero.Globalization
         }
 
         /// <summary>
+        /// Parses the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public static Money Parse(string value)
+            => Parse(value.AsSpan());
+
+        /// <summary>
+        /// Parses the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        /// <exception cref="FormatException"></exception>
+        public static Money Parse(ReadOnlySpan<char> value)
+        {
+            if (TryParse(value, out var money))
+            {
+                return money;
+            }
+            throw new FormatException();
+        }
+
+        /// <summary>
         /// Tries the parse.
         /// </summary>
         /// <param name="value">The value.</param>
         /// <param name="result">The result.</param>
         /// <returns></returns>
         public static bool TryParse(string value, out Money result)
+            => TryParse(value.AsSpan(), out result);
+
+        /// <summary>
+        /// Tries the parse.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="result">The result.</param>
+        /// <returns></returns>
+        public static bool TryParse(ReadOnlySpan<char> value, out Money result)
         {
             result = default;
-            if (string.IsNullOrWhiteSpace(value))
+            value = value.Trim();
+            if (value.IsEmpty)
             {
                 return false;
             }
 
-            value = value.Trim();
             if (char.IsNumber(value[0]))
             {
                 if (decimal.TryParse(value, out var tmp))
@@ -389,7 +421,6 @@ namespace Zero.Globalization
                     result = new Money(tmp);
                     return true;
                 }
-
                 return false;
             }
 
@@ -397,16 +428,15 @@ namespace Zero.Globalization
             {
                 return false;
             }
-
-            if (CurrencyInfo.TryFromCode(value.Substring(0, 3), out var currency))
+            if (CurrencyInfo.TryFromCode(value.Slice(0, 3), out var currency))
             {
                 if (value.Length == 3)
                 {
-                    result = new Money(currency, 0M);
+                    result = new Money(currency, decimal.Zero);
                 }
                 else
                 {
-                    if (decimal.TryParse(value.Substring(3).Trim(), out var tmp))
+                    if (decimal.TryParse(value.Slice(3).Trim(), out var tmp))
                     {
                         result = new Money(currency, tmp);
                     }
@@ -415,10 +445,8 @@ namespace Zero.Globalization
                         return false;
                     }
                 }
-
                 return true;
             }
-
             return false;
         }
 
@@ -545,12 +573,7 @@ namespace Zero.Globalization
         {
             if (!string.IsNullOrWhiteSpace(format) && format.StartsWith("I", StringComparison.InvariantCulture) && (format.Length >= 1 && format.Length <= 2))
             {
-#if NET
-                format = format.Replace("I", "C");
-#else
                 format = format.Replace("I", "C", StringComparison.InvariantCulture);
-
-#endif
 
                 provider = GetFormatProvider(this.Currency, provider, true);
             }
