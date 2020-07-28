@@ -49,7 +49,7 @@ namespace Zero.Globalization
                 throw new ArgumentException(string.Empty);
             }
 
-            if (rate < 0)
+            if (rate <= 0)
             {
                 throw new ArgumentException(string.Empty, nameof(rate));
             }
@@ -67,9 +67,7 @@ namespace Zero.Globalization
         ///   <see langword="true" /> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <see langword="false" />.
         /// </returns>
         public bool Equals(ExchangeRate other)
-        {
-            return BasicCurrency.Equals(other.BasicCurrency) && QuoteCurrency.Equals(other.QuoteCurrency) && Rate == other.Rate;
-        }
+            => BasicCurrency.Equals(other.BasicCurrency) && QuoteCurrency.Equals(other.QuoteCurrency) && Rate == other.Rate;
 
         /// <summary>
         /// Converts the specified money.
@@ -147,15 +145,24 @@ namespace Zero.Globalization
             }
 
             var currencyValues = array[0].Trim();
+            if (currencyValues.Length < 6)
+            {
+                return false;
+            }
+
+            if (!CurrencyInfo.TryFromCode(currencyValues.Substring(0, 3), out var basicCurrency))
+            {
+                return false;
+            }
+
             var index = currencyValues.IndexOf("/", StringComparison.InvariantCultureIgnoreCase);
             if (index < 0)
             {
                 index = 3;
             }
-
-            if (!CurrencyInfo.TryFromCode(currencyValues.Substring(0, index).Trim(), out var basicCurrency))
+            else
             {
-                return false;
+                index++;
             }
 
             if (!CurrencyInfo.TryFromCode(currencyValues.Substring(index).Trim(), out var quoteCurrency))
@@ -188,9 +195,18 @@ namespace Zero.Globalization
 
             value = value.Trim();
             var spaceIndex = value.IndexOf(' ');
-            var currencyValues = value.Slice(0, spaceIndex);
+            if (spaceIndex < 0)
+            {
+                return false;
+            }
 
+            var currencyValues = value.Slice(0, spaceIndex).Trim();
             if (currencyValues.Length < 6)
+            {
+                return false;
+            }
+
+            if (!CurrencyInfo.TryFromCode(currencyValues.Slice(0, 3), out var basicCurrency))
             {
                 return false;
             }
@@ -200,17 +216,16 @@ namespace Zero.Globalization
             {
                 index = 3;
             }
+            else
+            {
+                index++;
+            }
 
-            if (!CurrencyInfo.TryFromCode(currencyValues.Slice(0, index).Trim(), out var basicCurrency))
+            if (!CurrencyInfo.TryFromCode(currencyValues.Slice(index), out var quoteCurrency))
             {
                 return false;
             }
-
-            if (!CurrencyInfo.TryFromCode(currencyValues.Slice(index).Trim(), out var quoteCurrency))
-            {
-                return false;
-            }
-            if (!decimal.TryParse(value.Slice(spaceIndex).Trim(), out var rate))
+            if (!decimal.TryParse(value.Slice(spaceIndex + 1).Trim(), out var rate))
             {
                 return false;
             }

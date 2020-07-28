@@ -14,7 +14,7 @@ namespace Zero.Globalization
     /// <seealso cref="System.ICloneable" />
     [Serializable]
     [SuppressMessage("Design", "CA1036:重写可比较类型中的方法", Justification = "<挂起>")]
-    public readonly partial struct CurrencyInfo : IEquatable<CurrencyInfo>, IComparable, IComparable<CurrencyInfo>, ICloneable
+    public readonly partial struct CurrencyInfo : IEquatable<CurrencyInfo>, IComparable, IComparable<CurrencyInfo>
     {
         internal CurrencyInfo(string code = default, string numeric = default, int decimalDigits = default, string englishName = default, string symbol = default, bool isFund = false)
         {
@@ -79,7 +79,7 @@ namespace Zero.Globalization
         /// <value>
         /// The minor unit.
         /// </value>
-        public decimal MinorUnit => double.IsNaN(this.DecimalDigits) ? this.MajorUnit : new decimal(1.0 / Math.Pow(10.0, this.DecimalDigits));
+        public decimal MinorUnit => this.DecimalDigits == 0 ? this.MajorUnit : new decimal(1.0 / Math.Pow(10.0, this.DecimalDigits));
 
         /// <summary>
         /// Gets the numeric.
@@ -144,7 +144,18 @@ namespace Zero.Globalization
         /// This instance follows <paramref name="other" /> in the sort order.
         /// </returns>
         public int CompareTo(CurrencyInfo other)
-            => string.Compare(this.Code, other.Code, StringComparison.OrdinalIgnoreCase);
+        {
+            var i = string.Compare(this.Code, other.Code, StringComparison.OrdinalIgnoreCase);
+            if (i > 0)
+            {
+                return 1;
+            }
+            if (i < 0)
+            {
+                return -1;
+            }
+            return 0;
+        }
 
         /// <summary>
         /// Determines whether the specified <see cref="System.Object" />, is equal to this instance.
@@ -208,16 +219,18 @@ namespace Zero.Globalization
         /// <param name="right">The right.</param>
         /// <returns></returns>
         public static int CompareNumeric(CurrencyInfo left, CurrencyInfo right)
-            => string.Compare(left.Numeric, right.Numeric, StringComparison.OrdinalIgnoreCase);
-
-        /// <summary>
-        /// Creates a new object that is a copy of the current instance.
-        /// </summary>
-        /// <returns>
-        /// A new object that is a copy of this instance.
-        /// </returns>
-        public object Clone()
-            => this.MemberwiseClone();
+        {
+            var i = string.Compare(left.Numeric, right.Numeric, StringComparison.OrdinalIgnoreCase);
+            if (i > 0)
+            {
+                return 1;
+            }
+            if (i < 0)
+            {
+                return -1;
+            }
+            return 0;
+        }
 
         /// <summary>
         /// Implements the operator ==.

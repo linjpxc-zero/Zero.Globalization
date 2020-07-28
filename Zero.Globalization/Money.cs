@@ -51,9 +51,7 @@ namespace Zero.Globalization
         ///   <see langword="true" /> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <see langword="false" />.
         /// </returns>
         public bool Equals(Money other)
-        {
-            return amount == other.amount && Currency.Equals(other.Currency);
-        }
+            => Equals(this, other);
 
         /// <summary>
         /// Compares the current instance with another object of the same type and returns an integer that indicates whether the current instance precedes, follows, or occurs in the same position in the sort order as the other object.
@@ -174,6 +172,12 @@ namespace Zero.Globalization
         /// <param name="right">The right.</param>
         /// <returns></returns>
         public static int Compare(Money left, Money right) => left.CompareTo(right);
+
+        public static bool Equals(Money objA, Money objB)
+        {
+            return objA.Currency == objB.Currency
+                && Math.Round(objA.amount, objA.Currency.DecimalDigits, MidpointRounding.AwayFromZero) == Math.Round(objB.amount, objB.Currency.DecimalDigits, MidpointRounding.AwayFromZero);
+        }
 
         /// <summary>
         /// Adds the specified left.
@@ -436,7 +440,7 @@ namespace Zero.Globalization
                 }
                 else
                 {
-                    if (decimal.TryParse(value.Slice(3).Trim(), out var tmp))
+                    if (decimal.TryParse(value.Slice(3).Trim().TrimStart(currency.Symbol.AsSpan()), out var tmp))
                     {
                         result = new Money(currency, tmp);
                     }
@@ -585,8 +589,7 @@ namespace Zero.Globalization
             return this.amount.ToString(format ?? "C", provider);
         }
 
-        private static IFormatProvider GetFormatProvider(CurrencyInfo currency, IFormatProvider provider,
-            bool useCode = false)
+        private static IFormatProvider GetFormatProvider(CurrencyInfo currency, IFormatProvider provider, bool useCode = false)
         {
             NumberFormatInfo numberFormatInfo = null;
             if (provider != null)
@@ -651,7 +654,7 @@ namespace Zero.Globalization
         /// <returns>
         /// The enumerated constant that is the <see cref="System.TypeCode" /> of the class or value type that implements this interface.
         /// </returns>
-        TypeCode IConvertible.GetTypeCode()
+        public TypeCode GetTypeCode()
             => TypeCode.Object;
 
         /// <summary>
